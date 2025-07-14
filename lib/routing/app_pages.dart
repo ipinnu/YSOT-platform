@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../core/Layout/LayoutPage.dart';
 import '../features/about_body.dart';
-import '../features/home_body.dart';
+import '../features/ Home/home_body.dart';
 
 class AppRoutes {
   static const home = '/';

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../Theme/colors.dart';
+
 class Footer extends StatelessWidget {
   const Footer({super.key});
 
@@ -51,7 +53,7 @@ class Footer extends StatelessWidget {
             Text(
               "Yaba School of Thought",
               style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+              TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
             SizedBox(height: 12),
             Text(
@@ -66,7 +68,7 @@ class Footer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text("Links", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Divider(thickness: 2, color: Colors.deepPurple),
+            Divider(thickness: 2, color: AppColors.primary),
             SizedBox(height: 8),
             Text("Home"),
             Text("Events"),
@@ -85,16 +87,16 @@ class Footer extends StatelessWidget {
           children: const [
             Text("Recent Articles",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Divider(thickness: 2, color: Colors.deepPurple),
+            Divider(thickness: 2, color: AppColors.primary),
             SizedBox(height: 8),
             Text("Countering Boko Haram's war economy: A strategic"),
-            Text("Mar 19, 2025", style: TextStyle(color: Colors.deepPurple)),
+            Text("Mar 19, 2025", style: TextStyle(color: AppColors.primary)),
             SizedBox(height: 12),
             Text("The delusion of Nigerian exceptionalism (1)"),
-            Text("Mar 17, 2025", style: TextStyle(color: Colors.deepPurple)),
+            Text("Mar 17, 2025", style: TextStyle(color: AppColors.primary)),
             SizedBox(height: 12),
             Text("Professor E. A. Ayandele: The historian who correctly"),
-            Text("Mar 17, 2025", style: TextStyle(color: Colors.deepPurple)),
+            Text("Mar 17, 2025", style: TextStyle(color: AppColors.primary)),
           ],
         ),
       ),
@@ -105,7 +107,7 @@ class Footer extends StatelessWidget {
           children: [
             const Text("Join our Community!",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const Divider(thickness: 2, color: Colors.deepPurple),
+            const Divider(thickness: 2, color: AppColors.primary),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -124,7 +126,7 @@ class Footer extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   ),
                   child: const Text("Subscribe", style: TextStyle(color: Colors.white)),
@@ -141,7 +143,7 @@ class Footer extends StatelessWidget {
     return Column(
       children: [
         const Text(
-          "Copyright © 2025 .All Right reserved Template made with by Honocoroko.framer",
+          "©iNSDEC 2025. All Rights Reserved",
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),

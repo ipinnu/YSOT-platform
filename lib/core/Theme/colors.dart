@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF000066); // Deep Purple
-  static const Color secondary = Color(0xFFFFC107); // Amber
+  static const Color secondary = Color(0xFF6DFAFD); // Amber
   static const Color background = Color(0xFFF5F5F5); // Light Grey
   static const Color surface = Color(0xFFFFFFFF); // Pure White
   static const Color error = Color(0xFF1E1F22); // Red
