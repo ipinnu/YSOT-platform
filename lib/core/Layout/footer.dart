@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../Theme/colors.dart';
 
 class Footer extends StatelessWidget {
@@ -7,53 +6,51 @@ class Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
     return Container(
       color: const Color(0xFFF7F5FF),
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 800;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          isMobile
+              ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              isMobile
-                  ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ..._footerTopContent(isMobile),
-                  const SizedBox(height: 40),
-                  _footerBottomBar(),
-                ],
-              )
-                  : Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _footerTopContent(isMobile),
-                  ),
-                  const SizedBox(height: 40),
-                  _footerBottomBar(),
-                ],
-              ),
+              ..._buildFooterSections(isMobile),
+              const SizedBox(height: 40),
+              _footerBottomBar(),
             ],
-          );
-        },
+          )
+              : Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _buildFooterSections(isMobile),
+          ),
+          if (!isMobile) const SizedBox(height: 40),
+          if (!isMobile) _footerBottomBar(),
+        ],
       ),
     );
   }
 
-  List<Widget> _footerTopContent(bool isMobile) {
+  List<Widget> _buildFooterSections(bool isMobile) {
+    final spacing = isMobile ? const SizedBox(height: 32) : const SizedBox.shrink();
+
     return [
       Flexible(
-        fit: FlexFit.tight,
+        flex: 1,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text(
               "Yaba School of Thought",
-              style:
-              TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+                fontSize: 18,
+              ),
             ),
             SizedBox(height: 12),
             Text(
@@ -62,8 +59,9 @@ class Footer extends StatelessWidget {
           ],
         ),
       ),
+      spacing,
       Flexible(
-        fit: FlexFit.tight,
+        flex: 1,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
@@ -80,13 +78,13 @@ class Footer extends StatelessWidget {
           ],
         ),
       ),
+      spacing,
       Flexible(
-        fit: FlexFit.tight,
+        flex: 1,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text("Recent Articles",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text("Recent Articles", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             Divider(thickness: 2, color: AppColors.primary),
             SizedBox(height: 8),
             Text("Countering Boko Haram's war economy: A strategic"),
@@ -100,13 +98,13 @@ class Footer extends StatelessWidget {
           ],
         ),
       ),
+      spacing,
       Flexible(
-        fit: FlexFit.tight,
+        flex: 1,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Join our Community!",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text("Join our Community!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const Divider(thickness: 2, color: AppColors.primary),
             const SizedBox(height: 8),
             Row(

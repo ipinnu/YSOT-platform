@@ -72,7 +72,7 @@ class NavBar extends StatelessWidget {
     'About': '/about',
     'Events': '/events',
     'Gallery': '/gallery',
-    'Contact': '/contact',
+    'Posts': '/posts',
   };
   Widget _navItem(String label) {
     return Padding(
