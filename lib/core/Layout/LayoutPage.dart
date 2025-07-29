@@ -18,7 +18,7 @@ class LayoutPage extends StatelessWidget {
           children: [
             NavBar(), // shared
             child,          // dynamic
-            const Footer(), // shared
+            Footer(), // shared
           ],
         ),
       ),
