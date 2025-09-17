@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../core/Theme/colors.dart';
@@ -29,6 +30,93 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 
+  Widget _statsSection(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 768;
+
+    final stats = [
+      {'value': '20+', 'label': 'Years of Experience'},
+      {'value': '20+', 'label': 'Industry Awards'},
+      {'value': '10+', 'label': 'Projects Delivered'},
+      {'value': '50+', 'label': 'Happy Partners'},
+    ];
+
+    Widget _statItem(String value, String label) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(width: 2, height: 48, color: Colors.blueAccent),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    if (isMobile) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 140, // 🔥 enforce equal width
+                  child: _statItem(stats[0]['value']!, stats[0]['label']!),
+                ),
+                const SizedBox(width: 32),
+                SizedBox(
+                  width: 140,
+                  child: _statItem(stats[1]['value']!, stats[1]['label']!),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 140,
+                  child: _statItem(stats[2]['value']!, stats[2]['label']!),
+                ),
+                const SizedBox(width: 32),
+                SizedBox(
+                  width: 140,
+                  child: _statItem(stats[3]['value']!, stats[3]['label']!),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Desktop → single row with spacing
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: stats
+            .map((s) => _statItem(s['value']!, s['label']!))
+            .toList(),
+      );
+    }
+  }
+
   @override
   void dispose() {
     ytController.dispose();
@@ -38,7 +126,6 @@ class _HomeBodyState extends State<HomeBody> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Column(
       children: [
@@ -83,338 +170,308 @@ class _HomeBodyState extends State<HomeBody> {
           ),
         ),
         SizedBox(height: 52),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.redAccent.withOpacity(0.15),
-                blurRadius: 20,
-                offset: Offset(0, 10),
-              ),
-            ],
-            image: DecorationImage(
-              image: AssetImage(
-                'assets/background_texture.png',
-              ), // subtle background
-              fit: BoxFit.cover,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 40 : 150),
+          child: Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'About Us',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'We’re a strategy-first growth company. We help businesses move with purpose, powered by intuitive design and bold thinking.',
-                style: TextStyle(fontSize: 16, color: Colors.grey[800]),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 36),
-        Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 2, height: 48, color: Colors.blueAccent),
-                      SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '20+',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Years of Experience',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(width: 82),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 2, height: 48, color: Colors.blueAccent),
-                      SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '20+',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Years of Experience',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(width: 82),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 2, height: 48, color: Colors.blueAccent),
-                      SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '100+',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Projects Delivered',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(width: 8),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 2, height: 48, color: Colors.blueAccent),
-                      SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '50+',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Happy Partners',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 45),
-        const TopicsMarquee(),
-        SizedBox(height: 145),
-
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Main content row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Spacer to push blue container rightward
-                SizedBox(width: 360),
-
-                // Right section: Deep blue container with text
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.only(bottom: 160),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF011236),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(15.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Talk of the Town',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.4,
-                            ),
-                          ),
-                          Text(
-                            'Yaba School of Thought Inaugural Webinar ',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.secondary,
-                              height: 1.4,
-                            ),
-                          ),
-                          SizedBox(height: 32),
-                          Wrap(
-                            spacing: 40,
-                            runSpacing: 32,
-                            children: [
-                              // RESEARCH
-                              SizedBox(
-                                width: 900,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'In a moment that called for more than commentary, the voices that matter showed up. Led by Ogie Eboigbe, with moderation by Oyinkan Teriba, the session featured deeply rooted insights from Prof. Francis Egbokhare and Dr. Richard Ikiebe each tackling Nigeria’s systemic gaps not with slogans, but with thought.From governance fatigue to policy paralysis, the conversation didn’t skirt around the complexity. Words like “laying state” weren’t dropped casually they carried weight, and the room understood it. While Nigeria might still be searching for its thinkers, that evening they didn’t just turn up they took the lead.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        height: 1.6,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // DATA
-                            ],
-                          ),
-                          SizedBox(height: 25),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: TextButton.icon(
-                              onPressed: () {
-                                // Navigate to event page
-                                Navigator.pushNamed(
-                                  context,
-                                  '/events',
-                                ); // Or use your preferred nav method
-                              },
-                              icon: Icon(
-                                FontAwesomeIcons.arrowRight,
-                                color: AppColors.secondary,
-                                size: 18,
-                              ),
-                              label: Text(
-                                'See what happened',
-                                style: TextStyle(
-                                  color: AppColors.secondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Top-left YouTube player
-            Positioned(
-              top: 0,
-              left: 0,
-              child: Container(
-                width: 320,
-                height: 180,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: YoutubePlayer(
-                  controller: ytController,
-                  showVideoProgressIndicator: true,
-                  progressColors: ProgressBarColors(
-                    playedColor: Colors.redAccent,
-                    handleColor: Colors.redAccent,
-                  ),
-                ),
-              ),
-            ),
-
-            // Bottom-left poster overlay image
-            Positioned(
-              bottom: -130,
-              left: 40,
-
-              child: ClipRRect(
+            elevation: 4,
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Container(
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'images/ysotposter.jpg',
-                  width: 520,
-                  height: 250,
+                image: const DecorationImage(
+                  image: AssetImage('assets/background_texture.png'),
                   fit: BoxFit.cover,
                 ),
               ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'About Us',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      """The Yaba School of Thought (YSoT) is an independent, non-partisan community of Nigerian thinkers, scholars, and innovators dedicated to building a stronger intellectual foundation for the nation. Founded in 2025 and based in Yaba, Lagos — a historic hub of education and innovation — YSoT brings together leading voices across diverse fields to tackle Nigeria’s most pressing governance, cohesion, and development challenges.""",
+                      style: TextStyle(
+                        fontSize: isMobile ? 14 : 18,
+                        height: 1.5,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
+
+        SizedBox(height: 96),
+        _statsSection(context),
+        SizedBox(height: 95),
+        const TopicsMarquee(),
+        SizedBox(height: 145),
+
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Poster image first
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      'images/ysotposter.jpg',
+                      width: double.infinity,
+                      height: isMobile ? 200 : 300,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Main deep blue container
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF011236),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Talk of the Town',
+                          style: TextStyle(
+                            fontSize: isMobile ? 22 : 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.4,
+                          ),
+                        ),
+                        Text(
+                          'Yaba School of Thought Inaugural Webinar',
+                          style: TextStyle(
+                            fontSize: isMobile ? 22 : 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.secondary,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Body text
+                        Text(
+                          'In a moment that called for more than commentary, the voices that matter showed up. Led by Ogie Eboigbe, with moderation by Oyinkan Teriba, the session featured deeply rooted insights from Prof. Francis Egbokhare and Dr. Richard Ikiebe each tackling Nigeria’s systemic gaps not with slogans, but with thought.From governance fatigue to policy paralysis, the conversation didn’t skirt around the complexity. Words like “laying state” weren’t dropped casually they carried weight, and the room understood it. While Nigeria might still be searching for its thinkers, that evening they didn’t just turn up they took the lead.',
+                          style: TextStyle(
+                            fontSize: isMobile ? 13 : 14,
+                            height: 1.6,
+                            color: Colors.white,
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // See what happened button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/events');
+                            },
+                            icon: Icon(
+                              FontAwesomeIcons.arrowRight,
+                              color: AppColors.secondary,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'See what happened',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Optional: small YouTube preview (not dominant)
+                  GestureDetector(
+                    onTap: () async {
+                      const url =
+                          'https://www.youtube.com/watch?v=YOUR_VIDEO_ID';
+                      if (await canLaunchUrl(url as Uri)) {
+                        await launchUrl(url as Uri);
+                      } else {
+                        throw 'Could not launch $url';
+                      }
+                    },
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'images/yt_preview.png',
+                            width: isMobile ? 220 : 320,
+                            height: isMobile ? 124 : 180,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        // Dark overlay
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: isMobile ? 220 : 320,
+                            height: isMobile ? 124 : 180,
+                            color: Colors.black26, // semi-transparent overlay
+                          ),
+                        ),
+                        // Play icon
+                        Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: isMobile ? 40 : 60,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            : Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Same desktop layout you already have
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(width: 360),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.only(bottom: 160),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF011236),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(15.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Talk of the Town',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                Text(
+                                  'Yaba School of Thought Inaugural Webinar ',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.secondary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: 900,
+                                  child: Text(
+                                    'In a moment that called for more than commentary, the voices that matter showed up. Led by Ogie Eboigbe, with moderation by Oyinkan Teriba, the session featured deeply rooted insights from Prof. Francis Egbokhare and Dr. Richard Ikiebe each tackling Nigeria’s systemic gaps not with slogans, but with thought.From governance fatigue to policy paralysis, the conversation didn’t skirt around the complexity. Words like “laying state” weren’t dropped casually they carried weight, and the room understood it. While Nigeria might still be searching for its thinkers, that evening they didn’t just turn up they took the lead.',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      height: 1.6,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 25),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: TextButton.icon(
+                                    onPressed: () =>
+                                        Navigator.pushNamed(context, '/events'),
+                                    icon: Icon(
+                                      FontAwesomeIcons.arrowRight,
+                                      color: AppColors.secondary,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      'See what happened',
+                                      style: TextStyle(
+                                        color: AppColors.secondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Top-left video
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: Container(
+                      width: 320,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: YoutubePlayer(controller: ytController),
+                    ),
+                  ),
+
+                  // Bottom-left poster
+                  Positioned(
+                    bottom: -130,
+                    left: 40,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'images/ysotposter.jpg',
+                        width: 520,
+                        height: 250,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
         SizedBox(height: 185),
         // Recent Blog Post (replacing Featured Articles)
         Padding(
@@ -424,7 +481,8 @@ class _HomeBodyState extends State<HomeBody> {
             children: [
               Text(
                 "Recent Blog Post",
-                style: TextStyle( color: AppColors.primary,
+                style: TextStyle(
+                  color: AppColors.primary,
                   fontSize: isMobile ? 24 : 36,
                   fontWeight: FontWeight.bold,
                 ),
@@ -457,7 +515,10 @@ class _HomeBodyState extends State<HomeBody> {
               const SizedBox(height: 32),
               OutlinedButton.icon(
                 onPressed: () {},
-                icon: const Icon(FontAwesomeIcons.arrowRight, color: Colors.white),
+                icon: const Icon(
+                  FontAwesomeIcons.arrowRight,
+                  color: Colors.white,
+                ),
                 label: const Text(
                   "Show More",
                   style: TextStyle(color: Colors.white),
@@ -491,7 +552,8 @@ class _HomeBodyState extends State<HomeBody> {
             children: [
               Text(
                 "Join the Movement",
-                style: TextStyle( color: AppColors.primary,
+                style: TextStyle(
+                  color: AppColors.primary,
                   fontSize: isMobile ? 24 : 36,
                   fontWeight: FontWeight.bold,
                 ),
@@ -534,12 +596,12 @@ class _BlogImage extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Image.asset(
-            "assets/images/blog/governance-failure.png", // Use correct path
+            "images/The price of paralysis.jpg", // Use correct path
             fit: BoxFit.cover,
           ),
         ),
         const Padding(
-          padding: EdgeInsets.all(8),
+          padding: EdgeInsets.all(3),
           child: Text(
             "Jun 30, 2025",
             style: TextStyle(fontSize: 12, color: Colors.black87),
@@ -582,7 +644,7 @@ class _BlogText extends StatelessWidget {
               EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
-          child: Text("Mr Ogie Eboigbe"),
+          child: Text("Prof. Sunday E. Atawodi"),
         ),
       ],
     );

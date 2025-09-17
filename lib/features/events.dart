@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventsPage extends StatefulWidget {
   final VoidCallback onViewPressed;
@@ -50,20 +51,33 @@ class _EventsPageState extends State<EventsPage> {
             spacing: 16,
             children: [
               ElevatedButton(
-                onPressed: widget.onViewPressed,
+                onPressed: () async {
+                  final Uri url = Uri.parse(
+                    "https://www.dropbox.com/scl/fi/ey6lz308hxumhei3k1n1q/A-Reflection-on-the-Inaugural-Webinar-2.docx?rlkey=x5uf329nzqg6iucbatmmlhklt&st=toav6l50&dl=0",
+                  ); // link here
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    throw 'Could not launch $url';
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF001489),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 28,
                     vertical: 12,
                   ),
-                  shape: StadiumBorder(),
+                  shape: const StadiumBorder(),
                 ),
                 child: const Text(
                   'View',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
+
               ElevatedButton(
                 onPressed: widget.onDownloadPressed,
                 style: ElevatedButton.styleFrom(

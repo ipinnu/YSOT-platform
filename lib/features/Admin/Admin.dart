@@ -20,7 +20,19 @@ class AdminPage extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: controller.showCreateArticleDialog,
+            onPressed: () => controller.showCreateArticleDialog(context),
+
+          ),   // 🔹 Add Author Button
+          IconButton(
+            icon: const Icon(Icons.person_add),
+            tooltip: "Add Author",
+            onPressed: () => controller.showCreateAuthorDialog(context),
+          ),
+          // 🔹 Add Category Button
+          IconButton(
+            icon: const Icon(Icons.category),
+            tooltip: "Add Category",
+            onPressed: () => controller.showCreateCategoryDialog(context),
           ),
         ],
       ),
@@ -46,7 +58,9 @@ class AdminPage extends StatelessWidget {
                         DataColumn(label: Text('Category')),
                         DataColumn(label: Text('Featured')),
                       ],
-                      rows: List.generate(controller.articleList.length, (index) {
+                      rows: List.generate(controller.articleList.length, (
+                        index,
+                      ) {
                         final a = controller.articleList[index];
                         return DataRow(
                           onSelectChanged: (_) {
@@ -56,22 +70,35 @@ class AdminPage extends StatelessWidget {
                             DataCell(Text('${index + 1}')),
                             DataCell(Text(a['title'] ?? '')),
                             DataCell(Text(a['author'] ?? '')),
-                            DataCell(Text(
-                                a['createdAt']?.toDate().toString().split(' ')[0] ?? '')),
-                            DataCell(a['imageUrl'] != null
-                                ? SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: Image.network(a['imageUrl'], fit: BoxFit.cover),
-                            )
-                                : const Icon(Icons.image_not_supported)),
+                            DataCell(
+                              Text(
+                                a['createdAt']?.toDate().toString().split(
+                                      ' ',
+                                    )[0] ??
+                                    '',
+                              ),
+                            ),
+                            DataCell(
+                              a['imageUrl'] != null
+                                  ? SizedBox(
+                                      width: 50,
+                                      height: 50,
+                                      child: Image.network(
+                                        a['imageUrl'],
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : const Icon(Icons.image_not_supported),
+                            ),
                             DataCell(Text(a['category'] ?? '')),
-                            DataCell(Switch(
-                              value: a['featured'] ?? false,
-                              onChanged: (val) {
-                                controller.toggleFeatured(a['id'], val);
-                              },
-                            )),
+                            DataCell(
+                              Switch(
+                                value: a['featured'] ?? false,
+                                onChanged: (val) {
+                                  controller.toggleFeatured(a['id'], val);
+                                },
+                              ),
+                            ),
                           ],
                         );
                       }),
@@ -93,29 +120,38 @@ class AdminPage extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Article Details',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold)),
+                              const Text(
+                                'Article Details',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               IconButton(
                                 icon: const Icon(Icons.close),
                                 onPressed: controller.closeDetailPanel,
-                              )
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
                           // Title
                           TextFormField(
                             initialValue: selected['title'],
-                            decoration: const InputDecoration(labelText: 'Title'),
-                            onChanged: (v) => controller.updateField('title', v),
+                            decoration: const InputDecoration(
+                              labelText: 'Title',
+                            ),
+                            onChanged: (v) =>
+                                controller.updateField('title', v),
                           ),
                           const SizedBox(height: 8),
                           // Author
                           TextFormField(
                             initialValue: selected['author'],
-                            decoration: const InputDecoration(labelText: 'Author'),
-                            onChanged: (v) => controller.updateField('author', v),
+                            decoration: const InputDecoration(
+                              labelText: 'Author',
+                            ),
+                            onChanged: (v) =>
+                                controller.updateField('author', v),
                           ),
                           const SizedBox(height: 8),
                           // Date
@@ -124,52 +160,99 @@ class AdminPage extends StatelessWidget {
                                 ?.toDate()
                                 .toString()
                                 .split(' ')[0],
-                            decoration: const InputDecoration(labelText: 'Date'),
-                            onChanged: (v) => controller.updateDate(v as DateTime),
+                            decoration: const InputDecoration(
+                              labelText: 'Date',
+                            ),
+                            onChanged: (v) =>
+                                controller.updateDate(v as DateTime),
                           ),
                           const SizedBox(height: 8),
                           // Image URL
-                          TextFormField(
-                            initialValue: selected['imageUrl'],
-                            decoration: const InputDecoration(labelText: 'Image URL'),
-                            onChanged: (v) => controller.updateField('imageUrl', v),
+                          Row(
+                            children: [
+                              Obx(() {
+                                final imageUrl = controller
+                                    .selectedArticle
+                                    .value?['imageUrl'];
+                                return imageUrl != null && imageUrl.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          imageUrl,
+                                          height: 60,
+                                          width: 60,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.image,
+                                        size: 60,
+                                        color: Colors.grey,
+                                      );
+                              }),
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                onPressed: controller.pickAndUploadImage,
+                                icon: const Icon(Icons.upload),
+                                label: const Text("Upload Image"),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           // Category
                           TextFormField(
                             initialValue: selected['category'],
-                            decoration: const InputDecoration(labelText: 'Category'),
-                            onChanged: (v) => controller.updateField('category', v),
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                            ),
+                            onChanged: (v) =>
+                                controller.updateField('category', v),
                           ),
                           const SizedBox(height: 8),
                           // Featured
                           Row(
                             children: [
                               const Text('Featured'),
-                              Obx(() => Switch(
-                                value: controller.selectedArticle.value?['featured'] ?? false,
-                                onChanged: (v) => controller.updateField('featured', v),
-                              )),
+                              Obx(
+                                () => Switch(
+                                  value:
+                                      controller
+                                          .selectedArticle
+                                          .value?['featured'] ??
+                                      false,
+                                  onChanged: (v) =>
+                                      controller.updateField('featured', v),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           // Description
                           TextFormField(
                             initialValue: selected['summary'],
-                            decoration: const InputDecoration(labelText: 'Description'),
+                            decoration: const InputDecoration(
+                              labelText: 'Description',
+                            ),
                             maxLines: 2,
-                            onChanged: (v) => controller.updateField('summary', v),
+                            onChanged: (v) =>
+                                controller.updateField('summary', v),
                           ),
                           const SizedBox(height: 8),
                           // Content
                           Expanded(
                             child: TextFormField(
                               initialValue: selected['content'],
-                              decoration: const InputDecoration(labelText: 'Content'),
-                              maxLines: null,
+                              decoration: const InputDecoration(
+                                labelText: 'Content',
+                                alignLabelWithHint: true,   // keeps label aligned at the top
+                                border: OutlineInputBorder(), // makes it look like a real box
+                              ),
                               keyboardType: TextInputType.multiline,
+                              minLines: 10,   // minimum visible height (like a text box)
+                              maxLines: null, // allows wrapping & unlimited lines
                               onChanged: (v) => controller.updateField('content', v),
                             ),
+
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
