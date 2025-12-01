@@ -236,8 +236,8 @@ class AboutBody extends StatelessWidget {
                         color: Colors.grey[300],
                         child: const Icon(
                           Icons.school,
-                          size: 40,
-                          color: Colors.grey,
+                          size: 70,
+                          color: AppColors.primary,
                         ), // Replace with Image.asset(...) or Image.network(...) when ready
                       ),
                     ),
