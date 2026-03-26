@@ -150,6 +150,7 @@ export default function AboutPage() {
               src={thinkerTeam}
               alt="YSoT thinkers team"
               fill
+              priority
               sizes="100vw"
             />
           </div>

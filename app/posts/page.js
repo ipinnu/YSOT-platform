@@ -35,6 +35,7 @@ export default function PostsPage() {
               src={featured.image}
               alt={`${featured.title} cover`}
               fill
+              priority
               sizes="(max-width: 900px) 100vw, 620px"
             />
           </div>
