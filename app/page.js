@@ -1,11 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { featuredArticle } from './lib/articles';
+import { getArticles } from './lib/articles';
 import aboutImage from '../images/cat.jpg';
 import heroImage from '../images/hero.jpg';
 import eventPoster from '../images/ysotposter.jpg';
 import videoPreview from '../images/yt_preview.png';
-import featuredImage from '../images/The price of paralysis.jpg';
+
+export const dynamic = 'force-dynamic';
 
 const stats = [
   { value: '20+', label: 'Years of Experience' },
@@ -23,7 +24,9 @@ const topics = [
   'Institutional Renewal'
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const articles = await getArticles();
+  const featuredArticle = articles[0] || null;
   return (
     <>
       <section className="hero">
@@ -153,30 +156,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section blog">
-        <div className="container blog-card">
-          <div className="blog-image">
-            <div className="image-frame wide">
-              <Image
-                src={featuredImage}
-                alt="Featured article cover"
-                fill
-                sizes="(max-width: 900px) 100vw, 520px"
-              />
+      {featuredArticle && (
+        <section className="section blog">
+          <div className="container blog-card">
+            <div className="blog-image">
+              <div className="image-frame wide">
+                {featuredArticle.image_url ? (
+                  <Image
+                    src={featuredArticle.image_url}
+                    alt="Featured article cover"
+                    fill
+                    sizes="(max-width: 900px) 100vw, 520px"
+                  />
+                ) : (
+                  <div className="image-placeholder" />
+                )}
+              </div>
+              {featuredArticle.published_at && (
+                <span>
+                  {new Date(featuredArticle.published_at).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                </span>
+              )}
             </div>
-            <span>{featuredArticle.date}</span>
+            <div className="blog-content">
+              <h3>Recent Blog Post</h3>
+              <h2>{featuredArticle.title}</h2>
+              <p>{featuredArticle.excerpt}</p>
+              <p className="author">{featuredArticle.author}</p>
+              <Link className="secondary" href="/posts">
+                Show more
+              </Link>
+            </div>
           </div>
-          <div className="blog-content">
-            <h3>Recent Blog Post</h3>
-            <h2>{featuredArticle.title}</h2>
-            <p>{featuredArticle.excerpt}</p>
-            <p className="author">{featuredArticle.author}</p>
-            <Link className="secondary" href="/posts">
-              Show more
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="section cta">
         <div className="container cta-card">

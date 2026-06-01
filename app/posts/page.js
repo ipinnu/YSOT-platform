@@ -1,84 +1,107 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { articles } from '../lib/articles';
+import { getArticles } from '../lib/articles';
 
-const categories = [
-  'Governance',
-  'Economy',
-  'Education',
-  'Security',
-  'Institutions',
-  'Culture'
+export const dynamic = 'force-dynamic';
+
+const CATEGORIES = [
+  'Governance', 'Economy', 'Education', 'Security',
+  'Institutions', 'Culture',
 ];
 
-export default function PostsPage() {
-  const [featured, ...rest] = articles;
+export default async function PostsPage() {
+  const articles = await getArticles();
+
+  // Use the explicitly featured article as hero; fall back to most recent.
+  const featured = articles.find((a) => a.featured) || articles[0] || null;
+  const rest = articles.filter((a) => a !== featured);
+
   return (
     <div className="page">
 
-      {/* ── Hero ── */}
       <section className="page-hero">
         <div className="page-hero-text">
           <p className="eyebrow" style={{ color: '#93c5fd', marginBottom: '10px' }}>Ideas in print</p>
           <h1>Articles, Research &amp;<br />Policy Briefings</h1>
           <p style={{ color: '#c7d2fe', fontSize: '1.05rem', lineHeight: '1.75', marginTop: '12px' }}>
-            Rigorous thinking on Nigeria's most pressing challenges — written by people who live them.
+            Rigorous thinking on Nigeria&apos;s most pressing challenges — written by people who live them.
           </p>
         </div>
       </section>
 
-      {/* ── Featured post ── */}
-      <section className="section container">
-        <div className="posts-hero-card">
-          <div className="image-frame wide posts-featured-image">
-            <Image
-              src={featured.image}
-              alt={`${featured.title} cover`}
-              fill
-              priority
-              sizes="(max-width: 900px) 100vw, 620px"
-            />
-          </div>
-          <div className="posts-hero-content">
-            <span className="featured-badge">Featured</span>
-            <h2>{featured.title}</h2>
-            <p>{featured.excerpt}</p>
-            <div className="posts-hero-meta">
-              <span className="meta-chip">{featured.category}</span>
-              <span>{featured.readTime}</span>
-              <span>{featured.date}</span>
+      {featured && (
+        <section className="section container">
+          <div className="posts-hero-card">
+            <div className="image-frame wide posts-featured-image">
+              {featured.image_url ? (
+                <Image
+                  src={featured.image_url}
+                  alt={`${featured.title} cover`}
+                  fill
+                  priority
+                  sizes="(max-width: 900px) 100vw, 620px"
+                />
+              ) : (
+                <div className="image-placeholder" />
+              )}
             </div>
-            <Link className="primary" href={`/posts/${featured.slug}`}>
-              Read full article
-            </Link>
+            <div className="posts-hero-content">
+              <span className="featured-badge">Featured</span>
+              <h2>{featured.title}</h2>
+              <p>{featured.excerpt}</p>
+              <div className="posts-hero-meta">
+                <span className="meta-chip">{featured.category}</span>
+                <span>{featured.read_time}</span>
+                <span>
+                  {featured.published_at
+                    ? new Date(featured.published_at).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })
+                    : ''}
+                </span>
+              </div>
+              <Link className="primary" href={`/posts/${featured.slug}`}>
+                Read full article
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ── Filter + grid ── */}
       <section className="section" style={{ background: 'var(--surface)', paddingTop: '48px' }}>
         <div className="container">
           <div className="posts-filter-row">
             <h3 className="posts-grid-label">All posts</h3>
             <div className="post-filters" aria-label="Post categories">
-              {categories.map((cat) => (
+              {CATEGORIES.map((cat) => (
                 <button key={cat} type="button" className="filter-pill">{cat}</button>
               ))}
             </div>
           </div>
+
+          {articles.length === 0 && (
+            <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '60px 0' }}>
+              No articles published yet.
+            </p>
+          )}
+
           <div className="posts-grid" style={{ marginTop: '28px' }}>
             {rest.map((article) => (
-              <article key={article.title} className="post-card">
+              <article key={article.id} className="post-card">
                 <div className="image-frame wide">
-                  <Image
-                    src={article.image}
-                    alt={`${article.title} cover`}
-                    fill
-                    sizes="(max-width: 900px) 100vw, 360px"
-                  />
+                  {article.image_url ? (
+                    <Image
+                      src={article.image_url}
+                      alt={`${article.title} cover`}
+                      fill
+                      sizes="(max-width: 900px) 100vw, 360px"
+                    />
+                  ) : (
+                    <div className="image-placeholder" />
+                  )}
                 </div>
                 <div className="post-card-content">
-                  <p className="post-date">{article.category} · {article.readTime}</p>
+                  <p className="post-date">{article.category} · {article.read_time}</p>
                   <h3>{article.title}</h3>
                   <p>{article.excerpt}</p>
                   <p className="author">{article.author}</p>
@@ -92,7 +115,6 @@ export default function PostsPage() {
         </div>
       </section>
 
-      {/* ── Newsletter CTA ── */}
       <section className="section cta">
         <div className="container cta-card">
           <p className="eyebrow" style={{ color: '#93c5fd', marginBottom: '10px' }}>Stay connected</p>

@@ -1,4 +1,34 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '../lib/supabase/client';
+
 export default function AdminLoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      router.push('/admin');
+      router.refresh();
+    }
+  }
+
   return (
     <div className="page">
       <section className="page-hero compact">
@@ -11,23 +41,34 @@ export default function AdminLoginPage() {
       <section className="section container">
         <div className="login-card">
           <h2>Sign in</h2>
-          <form className="form">
+          <form className="form" onSubmit={handleSubmit}>
             <label>
               Email
-              <input type="email" placeholder="editor@ysot.ng" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="editor@ysot.ng"
+                required
+                autoComplete="email"
+              />
             </label>
             <label>
               Password
-              <input type="password" placeholder="••••••••" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
             </label>
-            <button type="button" className="primary">
-              Sign in
+            {error && <p className="form-error">{error}</p>}
+            <button type="submit" className="primary" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
-          <p className="hint">
-            Integrate your authentication provider (Firebase Auth, Supabase, or
-            a custom API) to secure access.
-          </p>
         </div>
       </section>
     </div>
