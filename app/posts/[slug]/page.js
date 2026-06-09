@@ -19,7 +19,7 @@ function renderBlocks(content) {
     switch (block.type) {
       case 'heading': {
         const Tag = block.level === 3 ? 'h3' : 'h2';
-        return <Tag key={i}>{block.text}</Tag>;
+        return <Tag key={i} className="post-heading">{block.text}</Tag>;
       }
       case 'quote':
         return (
@@ -36,7 +36,7 @@ function renderBlocks(content) {
         );
       default:
         return (
-          <p key={i} className={i === 0 ? 'post-lead' : ''}>
+          <p key={i} className={i === 0 ? 'post-lead' : 'post-para'}>
             {block.text}
           </p>
         );
@@ -66,7 +66,7 @@ export default async function PostDetailPage({ params }) {
       <header className="post-header">
         <div className="container post-header-nav">
           <Link className="post-back" href="/posts">← All articles</Link>
-          <span className="meta-chip">{article.category}</span>
+          <span className="post-header-cat">{article.category}</span>
         </div>
         <div className="container post-header-title">
           <h1>{article.title}</h1>
@@ -92,6 +92,7 @@ export default async function PostDetailPage({ params }) {
               sizes="(max-width: 900px) 100vw, 1200px"
               style={{ objectFit: 'cover' }}
             />
+            <div className="post-banner-overlay" />
           </div>
         </div>
       )}
@@ -126,28 +127,30 @@ export default async function PostDetailPage({ params }) {
       </section>
 
       {related.length > 0 && (
-        <section className="section" style={{ background: 'var(--surface)', paddingTop: '56px' }}>
+        <section className="section posts-grid-section" style={{ paddingTop: '56px' }}>
           <div className="container">
             <p className="eyebrow about-eyebrow">Keep reading</p>
             <h2 className="section-heading">More from YSoT</h2>
             <div className="posts-grid">
               {related.map((item) => (
                 <article key={item.slug} className="post-card">
-                  <div className="image-frame wide">
+                  <div className="image-frame wide post-card-image">
                     {item.image_url ? (
                       <Image src={item.image_url} alt={`${item.title} cover`} fill sizes="(max-width: 900px) 100vw, 360px" />
                     ) : (
                       <div className="image-placeholder" />
                     )}
+                    <div className="post-card-image-overlay" />
+                    <span className="post-card-cat-badge">{item.category}</span>
                   </div>
                   <div className="post-card-content">
-                    <p className="post-date">{item.category} · {item.read_time}</p>
-                    <h3>{item.title}</h3>
-                    <p>{item.excerpt}</p>
-                    <p className="author">{item.author}</p>
-                    <Link className="link" href={`/posts/${item.slug}`} style={{ marginTop: '4px' }}>
-                      Read article →
-                    </Link>
+                    <p className="post-date">{item.read_time}</p>
+                    <h3><Link href={`/posts/${item.slug}`}>{item.title}</Link></h3>
+                    <p className="post-card-excerpt">{item.excerpt}</p>
+                    <div className="post-card-footer">
+                      <span className="author">{item.author}</span>
+                      <Link className="post-card-read" href={`/posts/${item.slug}`}>Read →</Link>
+                    </div>
                   </div>
                 </article>
               ))}

@@ -1,24 +1,15 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import { getArticles } from '../lib/articles';
+import PostsClient from './PostsClient';
 
 export const dynamic = 'force-dynamic';
 
-const CATEGORIES = [
-  'Governance', 'Economy', 'Education', 'Security',
-  'Institutions', 'Culture',
-];
-
 export default async function PostsPage() {
   const articles = await getArticles();
-
-  // Use the explicitly featured article as hero; fall back to most recent.
   const featured = articles.find((a) => a.featured) || articles[0] || null;
   const rest = articles.filter((a) => a !== featured);
 
   return (
     <div className="page">
-
       <section className="page-hero">
         <div className="page-hero-text">
           <p className="eyebrow" style={{ color: '#93c5fd', marginBottom: '10px' }}>Ideas in print</p>
@@ -29,91 +20,7 @@ export default async function PostsPage() {
         </div>
       </section>
 
-      {featured && (
-        <section className="section container">
-          <div className="posts-hero-card">
-            <div className="image-frame wide posts-featured-image">
-              {featured.image_url ? (
-                <Image
-                  src={featured.image_url}
-                  alt={`${featured.title} cover`}
-                  fill
-                  priority
-                  sizes="(max-width: 900px) 100vw, 620px"
-                />
-              ) : (
-                <div className="image-placeholder" />
-              )}
-            </div>
-            <div className="posts-hero-content">
-              <span className="featured-badge">Featured</span>
-              <h2>{featured.title}</h2>
-              <p>{featured.excerpt}</p>
-              <div className="posts-hero-meta">
-                <span className="meta-chip">{featured.category}</span>
-                <span>{featured.read_time}</span>
-                <span>
-                  {featured.published_at
-                    ? new Date(featured.published_at).toLocaleDateString('en-GB', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                      })
-                    : ''}
-                </span>
-              </div>
-              <Link className="primary" href={`/posts/${featured.slug}`}>
-                Read full article
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="section" style={{ background: 'var(--surface)', paddingTop: '48px' }}>
-        <div className="container">
-          <div className="posts-filter-row">
-            <h3 className="posts-grid-label">All posts</h3>
-            <div className="post-filters" aria-label="Post categories">
-              {CATEGORIES.map((cat) => (
-                <button key={cat} type="button" className="filter-pill">{cat}</button>
-              ))}
-            </div>
-          </div>
-
-          {articles.length === 0 && (
-            <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '60px 0' }}>
-              No articles published yet.
-            </p>
-          )}
-
-          <div className="posts-grid" style={{ marginTop: '28px' }}>
-            {rest.map((article) => (
-              <article key={article.id} className="post-card">
-                <div className="image-frame wide">
-                  {article.image_url ? (
-                    <Image
-                      src={article.image_url}
-                      alt={`${article.title} cover`}
-                      fill
-                      sizes="(max-width: 900px) 100vw, 360px"
-                    />
-                  ) : (
-                    <div className="image-placeholder" />
-                  )}
-                </div>
-                <div className="post-card-content">
-                  <p className="post-date">{article.category} · {article.read_time}</p>
-                  <h3>{article.title}</h3>
-                  <p>{article.excerpt}</p>
-                  <p className="author">{article.author}</p>
-                  <Link className="link" href={`/posts/${article.slug}`} style={{ marginTop: '4px' }}>
-                    Read article →
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PostsClient featured={featured} rest={rest} />
 
       <section className="section cta">
         <div className="container cta-card">
@@ -131,7 +38,6 @@ export default async function PostsPage() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }
