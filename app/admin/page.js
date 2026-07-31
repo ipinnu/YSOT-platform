@@ -1,14 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../lib/supabase/client';
 
+function formatDate(value) {
+  if (!value) return 'Not published';
+  return new Date(value).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function initials(name) {
+  return String(name || 'Unassigned')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
 export default function AdminPage() {
   const [articles, setArticles] = useState([]);
   const [authors, setAuthors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [authorFilter, setAuthorFilter] = useState('all');
+  const [workingId, setWorkingId] = useState(null);
+  const [actionError, setActionError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -16,45 +43,82 @@ export default function AdminPage() {
   }, []);
 
   async function fetchAll() {
+    setLoadError('');
     const supabase = createClient();
-    const [{ data: arts }, { data: auths }] = await Promise.all([
+    const [
+      { data: articleData, error: articleError },
+      { data: authorData, error: authorError },
+      { data: categoryData, error: categoryError },
+    ] = await Promise.all([
       supabase
         .from('articles')
-        .select('id, slug, title, author, category, status, featured, published_at, created_at')
+        .select('id, slug, title, excerpt, author_id, author, category, status, featured, image_url, read_time, published_at, created_at, updated_at')
         .order('created_at', { ascending: false }),
-      supabase.from('authors').select('id, name').order('name'),
+      supabase
+        .from('authors')
+        .select('id, name, description, image_url')
+        .order('name'),
+      supabase.from('categories').select('id, name').order('name'),
     ]);
-    setArticles(arts || []);
-    setAuthors(auths || []);
+
+    if (articleError || authorError || categoryError) {
+      setLoadError(
+        articleError?.message ||
+        authorError?.message ||
+        categoryError?.message ||
+        'The editorial library could not be loaded.'
+      );
+    }
+
+    setArticles(articleData || []);
+    setAuthors(authorData || []);
+    setCategories(categoryData || []);
     setLoading(false);
   }
 
+  async function runArticleAction(id, action) {
+    setWorkingId(id);
+    setActionError('');
+    try {
+      const { error } = await action(createClient());
+      if (error) throw error;
+      await fetchAll();
+    } catch (error) {
+      setActionError(error?.message || 'That change could not be saved. Please try again.');
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
   async function handleDelete(id, title) {
-    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    const supabase = createClient();
-    await supabase.from('articles').delete().eq('id', id);
-    fetchAll();
+    if (!confirm(`Delete “${title}”? This cannot be undone.`)) return;
+    await runArticleAction(id, (supabase) =>
+      supabase.from('articles').delete().eq('id', id)
+    );
   }
 
   async function handlePublish(id) {
-    const supabase = createClient();
-    await supabase
-      .from('articles')
-      .update({ status: 'published', published_at: new Date().toISOString() })
-      .eq('id', id);
-    fetchAll();
+    await runArticleAction(id, (supabase) =>
+      supabase
+        .from('articles')
+        .update({ status: 'published', published_at: new Date().toISOString() })
+        .eq('id', id)
+    );
   }
 
   async function handleUnpublish(id) {
-    const supabase = createClient();
-    await supabase.from('articles').update({ status: 'draft', published_at: null }).eq('id', id);
-    fetchAll();
+    await runArticleAction(id, (supabase) =>
+      supabase
+        .from('articles')
+        .update({ status: 'draft', published_at: null })
+        .eq('id', id)
+    );
   }
 
   async function handleToggleFeatured(id, current) {
-    const supabase = createClient();
-    await supabase.from('articles').update({ featured: !current }).eq('id', id);
-    fetchAll();
+    await runArticleAction(id, (supabase) =>
+      supabase.from('articles').update({ featured: !current }).eq('id', id)
+    );
   }
 
   async function handleSignOut() {
@@ -64,111 +128,424 @@ export default function AdminPage() {
     router.refresh();
   }
 
-  const published = articles.filter((a) => a.status === 'published').length;
-  const drafts = articles.filter((a) => a.status === 'draft').length;
+  const published = articles.filter((article) => article.status === 'published').length;
+  const drafts = articles.filter((article) => article.status === 'draft').length;
+
+  const categoryRows = useMemo(() => {
+    const names = new Set(categories.map((category) => category.name));
+    articles.forEach((article) => article.category && names.add(article.category));
+    return [...names]
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({
+        name,
+        count: articles.filter((article) => article.category === name).length,
+      }));
+  }, [articles, categories]);
+
+  const authorRows = useMemo(() => {
+    const rows = authors.map((author) => ({
+      ...author,
+      count: articles.filter(
+        (article) => article.author_id === author.id || article.author === author.name
+      ).length,
+    }));
+    const unassigned = articles.filter(
+      (article) => !article.author_id && !article.author
+    ).length;
+    return { rows, unassigned };
+  }, [articles, authors]);
+
+  const filteredArticles = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return articles.filter((article) => {
+      const matchesSearch =
+        !query ||
+        [article.title, article.excerpt, article.author, article.category, article.slug]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(query));
+      const matchesStatus =
+        statusFilter === 'all' || article.status === statusFilter;
+      const matchesCategory =
+        categoryFilter === 'all' || article.category === categoryFilter;
+      const selectedAuthor = authors.find((author) => author.id === authorFilter);
+      const matchesAuthor =
+        authorFilter === 'all' ||
+        (authorFilter === 'unassigned'
+          ? !article.author_id && !article.author
+          : article.author_id === authorFilter ||
+            (selectedAuthor && article.author === selectedAuthor.name));
+      return matchesSearch && matchesStatus && matchesCategory && matchesAuthor;
+    });
+  }, [articles, authors, search, statusFilter, categoryFilter, authorFilter]);
+
+  const filtersActive =
+    search || statusFilter !== 'all' || categoryFilter !== 'all' || authorFilter !== 'all';
+
+  function clearFilters() {
+    setSearch('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setAuthorFilter('all');
+  }
 
   return (
-    <div className="page">
-      <section className="page-hero compact">
-        <div className="page-hero-text">
-          <div className="admin-header-row">
-            <div>
-              <h1>Editorial Dashboard</h1>
-              <p>Manage articles, papers, and policy briefs for YSoT.</p>
-            </div>
-            <div className="admin-header-actions">
-              <Link href="/admin/newspapers" className="primary">Import Newspaper</Link>
-              <Link href="/admin/articles/new" className="primary">+ New Article</Link>
-              <Link href="/admin/authors/new" className="secondary">+ Author</Link>
-              <Link href="/admin/categories/new" className="secondary">+ Category</Link>
-              <button type="button" className="secondary" onClick={handleSignOut}>Sign out</button>
-            </div>
+    <div className="page admin-page">
+      <section className="admin-command-hero">
+        <div className="container admin-command-inner">
+          <div className="admin-command-copy">
+            <span className="admin-eyebrow">
+              <span className="admin-live-dot" />
+              YSoT Editorial Desk
+            </span>
+            <h1>Content Control Room</h1>
+            <p>
+              Everything you publish lives here—articles, writers, categories,
+              newspaper imports, and editorial status.
+            </p>
+          </div>
+
+          <div className="admin-command-actions">
+            <Link href="/admin/articles/new" className="primary admin-main-action">
+              <span aria-hidden="true">+</span> New article
+            </Link>
+            <Link href="/admin/newspapers" className="admin-import-action">
+              Import newspaper
+            </Link>
+            <button type="button" className="admin-signout" onClick={handleSignOut}>
+              Sign out
+            </button>
           </div>
         </div>
       </section>
 
-      <section className="section container">
-        <div className="admin-stats-row">
+      <main className="container admin-dashboard">
+        <section className="admin-overview" aria-label="Editorial overview">
           {[
-            { label: 'Total articles', value: articles.length },
-            { label: 'Published', value: published },
-            { label: 'Drafts', value: drafts },
-            { label: 'Authors', value: authors.length },
+            { label: 'All articles', value: articles.length, tone: 'blue', note: 'Entire library' },
+            { label: 'Published', value: published, tone: 'green', note: 'Live on the website' },
+            { label: 'Drafts', value: drafts, tone: 'gold', note: 'Waiting for review' },
+            { label: 'Writers', value: authors.length, tone: 'ink', note: 'Contributor profiles' },
           ].map((stat) => (
-            <div key={stat.label} className="admin-stat-card">
-              <span className="admin-stat-value">{stat.value}</span>
-              <span className="admin-stat-label">{stat.label}</span>
+            <div key={stat.label} className="admin-overview-card" data-tone={stat.tone}>
+              <span className="admin-overview-label">{stat.label}</span>
+              <strong>{loading ? '—' : stat.value}</strong>
+              <small>{stat.note}</small>
             </div>
           ))}
-        </div>
+        </section>
 
-        <div className="section-card" style={{ marginTop: '32px' }}>
-          <h2 style={{ marginBottom: '20px' }}>All articles</h2>
-          {loading ? (
-            <p style={{ color: 'var(--muted)' }}>Loading…</p>
-          ) : articles.length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>
-              No articles yet.{' '}
-              <Link href="/admin/articles/new" style={{ color: 'var(--primary)' }}>Create the first one.</Link>
-            </p>
-          ) : (
-            <div className="admin-article-list">
-              {articles.map((article) => (
-                <div key={article.id} className="admin-article-row">
-                  <div className="admin-article-info">
-                    <span className="admin-article-title">
-                      {article.featured && (
-                        <span className="meta-chip" style={{ fontSize: '0.65rem', padding: '1px 7px', marginRight: '8px', background: 'var(--primary)', color: '#fff' }}>
-                          featured
-                        </span>
-                      )}
-                      {article.title}
-                    </span>
-                    <span className="admin-article-meta">
-                      {article.author && `${article.author} · `}
-                      {article.category && (
-                        <span className="meta-chip" style={{ fontSize: '0.7rem', padding: '1px 8px' }}>
-                          {article.category}
-                        </span>
-                      )}
-                      {' · '}
-                      <span className="admin-status-badge" data-status={article.status}>
-                        {article.status}
-                      </span>
-                    </span>
-                    <span className="admin-article-slug">/posts/{article.slug}</span>
+        {loadError && (
+          <div className="admin-load-error" role="alert">
+            <span>{loadError}</span>
+            <button type="button" onClick={fetchAll}>Try again</button>
+          </div>
+        )}
+
+        {actionError && (
+          <div className="admin-load-error" role="alert">
+            <span>{actionError}</span>
+            <button type="button" onClick={() => setActionError('')}>Dismiss</button>
+          </div>
+        )}
+
+        <div className="admin-workspace-grid">
+          <section className="admin-library-panel">
+            <div className="admin-panel-heading">
+              <div>
+                <span className="admin-section-kicker">Content library</span>
+                <h2>Articles</h2>
+                <p>
+                  {loading
+                    ? 'Loading your editorial library…'
+                    : `${filteredArticles.length} of ${articles.length} articles shown`}
+                </p>
+              </div>
+              <Link
+                href="/admin/articles/new"
+                className="admin-round-plus"
+                aria-label="Add a new article"
+                title="Add a new article"
+              >
+                +
+              </Link>
+            </div>
+
+            <div className="admin-library-tools">
+              <label className="admin-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search title, writer, category…"
+                  aria-label="Search articles"
+                />
+              </label>
+
+              <div className="admin-status-filter" aria-label="Filter articles by status">
+                {[
+                  { value: 'all', label: 'All' },
+                  { value: 'published', label: 'Published' },
+                  { value: 'draft', label: 'Drafts' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={statusFilter === option.value ? 'active' : ''}
+                    onClick={() => setStatusFilter(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                className="admin-filter-select"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                aria-label="Filter articles by category"
+              >
+                <option value="all">Every category</option>
+                {categoryRows.map((category) => (
+                  <option key={category.name} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              {filtersActive && (
+                <button type="button" className="admin-clear-filters" onClick={clearFilters}>
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="admin-library-loading">
+                <span />
+                <span />
+                <span />
+              </div>
+            ) : filteredArticles.length === 0 ? (
+              <div className="admin-library-empty">
+                <div aria-hidden="true">Y</div>
+                <h3>{articles.length === 0 ? 'Your library is ready' : 'No articles match'}</h3>
+                <p>
+                  {articles.length === 0
+                    ? 'Create an article or import a newspaper to begin.'
+                    : 'Try clearing a filter or searching for another phrase.'}
+                </p>
+                {articles.length === 0 ? (
+                  <Link href="/admin/articles/new" className="primary">+ Create first article</Link>
+                ) : (
+                  <button type="button" className="secondary" onClick={clearFilters}>
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="admin-content-list">
+                {filteredArticles.map((article) => {
+                  const busy = workingId === article.id;
+                  return (
+                    <article key={article.id} className="admin-content-row">
+                      <div className="admin-content-thumb">
+                        {article.image_url ? (
+                          <img src={article.image_url} alt="" />
+                        ) : (
+                          <span>{initials(article.title)}</span>
+                        )}
+                        {article.featured && <b title="Featured article">★</b>}
+                      </div>
+
+                      <div className="admin-content-main">
+                        <div className="admin-content-flags">
+                          <span className="admin-status-badge" data-status={article.status}>
+                            {article.status}
+                          </span>
+                          {article.category && (
+                            <span className="admin-category-label">{article.category}</span>
+                          )}
+                        </div>
+                        <h3>
+                          <Link href={`/admin/articles/${article.id}/edit`}>
+                            {article.title}
+                          </Link>
+                        </h3>
+                        <div className="admin-content-meta">
+                          <span>{article.author || 'Writer not assigned'}</span>
+                          <i />
+                          <span>{article.read_time || 'Read time not set'}</span>
+                          <i />
+                          <span>
+                            {article.status === 'published'
+                              ? formatDate(article.published_at)
+                              : `Created ${formatDate(article.created_at)}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="admin-content-actions" aria-label={`Actions for ${article.title}`}>
+                        <Link href={`/admin/articles/${article.id}/edit`} className="admin-row-edit">
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFeatured(article.id, article.featured)}
+                          disabled={busy}
+                          title={article.featured ? 'Remove from featured' : 'Mark as featured'}
+                        >
+                          {article.featured ? 'Unfeature' : 'Feature'}
+                        </button>
+                        {article.status === 'draft' ? (
+                          <button
+                            type="button"
+                            className="publish"
+                            onClick={() => handlePublish(article.id)}
+                            disabled={busy}
+                          >
+                            {busy ? 'Working…' : 'Publish'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleUnpublish(article.id)}
+                            disabled={busy}
+                          >
+                            {busy ? 'Working…' : 'Move to drafts'}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="delete"
+                          onClick={() => handleDelete(article.id, article.title)}
+                          disabled={busy}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <aside className="admin-collections">
+            <section className="admin-collection-card">
+              <div className="admin-collection-heading">
+                <div>
+                  <span className="admin-section-kicker">People</span>
+                  <h2>Writers</h2>
+                </div>
+                <Link
+                  href="/admin/authors/new"
+                  className="admin-mini-plus"
+                  aria-label="Add a writer"
+                  title="Add a writer"
+                >
+                  +
+                </Link>
+              </div>
+
+              <div className="admin-writer-list">
+                {authorRows.rows.length === 0 && !loading ? (
+                  <div className="admin-mini-empty">
+                    <p>No writer profiles yet.</p>
+                    <Link href="/admin/authors/new">+ Add the first writer</Link>
                   </div>
-                  <div className="admin-article-actions">
+                ) : (
+                  authorRows.rows.map((author) => (
                     <button
                       type="button"
-                      className="admin-action-link"
-                      title={article.featured ? 'Unfeature' : 'Feature'}
-                      onClick={() => handleToggleFeatured(article.id, article.featured)}
+                      key={author.id}
+                      className={authorFilter === author.id ? 'admin-writer active' : 'admin-writer'}
+                      onClick={() =>
+                        setAuthorFilter((current) => current === author.id ? 'all' : author.id)
+                      }
                     >
-                      {article.featured ? '★' : '☆'}
+                      <span className="admin-writer-avatar">
+                        {author.image_url ? (
+                          <img src={author.image_url} alt="" />
+                        ) : (
+                          initials(author.name)
+                        )}
+                      </span>
+                      <span className="admin-writer-name">
+                        <strong>{author.name}</strong>
+                        <small>{author.count} article{author.count === 1 ? '' : 's'}</small>
+                      </span>
+                      <span aria-hidden="true">›</span>
                     </button>
-                    <Link href={`/admin/articles/${article.id}/edit`} className="admin-action-link">
-                      Edit
-                    </Link>
-                    {article.status === 'draft' ? (
-                      <button type="button" className="admin-action-link publish" onClick={() => handlePublish(article.id)}>
-                        Publish
-                      </button>
-                    ) : (
-                      <button type="button" className="admin-action-link unpublish" onClick={() => handleUnpublish(article.id)}>
-                        Unpublish
-                      </button>
-                    )}
-                    <button type="button" className="admin-action-link delete" onClick={() => handleDelete(article.id, article.title)}>
-                      Delete
-                    </button>
-                  </div>
+                  ))
+                )}
+
+                {authorRows.unassigned > 0 && (
+                  <button
+                    type="button"
+                    className={authorFilter === 'unassigned' ? 'admin-writer active' : 'admin-writer'}
+                    onClick={() =>
+                      setAuthorFilter((current) => current === 'unassigned' ? 'all' : 'unassigned')
+                    }
+                  >
+                    <span className="admin-writer-avatar unassigned">?</span>
+                    <span className="admin-writer-name">
+                      <strong>Writer not assigned</strong>
+                      <small>{authorRows.unassigned} article{authorRows.unassigned === 1 ? '' : 's'}</small>
+                    </span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <section className="admin-collection-card">
+              <div className="admin-collection-heading">
+                <div>
+                  <span className="admin-section-kicker">Organisation</span>
+                  <h2>Categories</h2>
                 </div>
-              ))}
-            </div>
-          )}
+                <Link
+                  href="/admin/categories/new"
+                  className="admin-mini-plus"
+                  aria-label="Add a category"
+                  title="Add a category"
+                >
+                  +
+                </Link>
+              </div>
+
+              <div className="admin-category-list">
+                {categoryRows.map((category) => (
+                  <button
+                    type="button"
+                    key={category.name}
+                    className={categoryFilter === category.name ? 'active' : ''}
+                    onClick={() =>
+                      setCategoryFilter((current) =>
+                        current === category.name ? 'all' : category.name
+                      )
+                    }
+                  >
+                    <span>{category.name}</span>
+                    <b>{category.count}</b>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <Link href="/admin/newspapers" className="admin-import-card">
+              <span className="admin-import-mark">N</span>
+              <span>
+                <small>Automatic conversion</small>
+                <strong>Import a newspaper</strong>
+                <em>PDF, JPG or PNG → article drafts</em>
+              </span>
+              <b aria-hidden="true">→</b>
+            </Link>
+          </aside>
         </div>
-      </section>
+      </main>
     </div>
   );
 }
