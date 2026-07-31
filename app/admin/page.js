@@ -77,6 +77,7 @@ export default function AdminPage() {
               <p>Manage articles, papers, and policy briefs for YSoT.</p>
             </div>
             <div className="admin-header-actions">
+              <Link href="/admin/newspapers" className="primary">Import Newspaper</Link>
               <Link href="/admin/articles/new" className="primary">+ New Article</Link>
               <Link href="/admin/authors/new" className="secondary">+ Author</Link>
               <Link href="/admin/categories/new" className="secondary">+ Category</Link>

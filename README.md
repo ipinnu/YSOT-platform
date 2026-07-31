@@ -1,5 +1,20 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Newspaper importer
+
+The authenticated admin dashboard can convert PDF, JPG, and PNG newspapers into
+unpublished article drafts with cropped source photographs.
+
+Before first use:
+
+1. Run `supabase/newspaper_import.sql` in the Supabase SQL Editor.
+2. Add `GROQ_API_KEY` to the deployment environment.
+3. Open `/admin/newspapers` or select **Import Newspaper** from the dashboard.
+
+The importer renders PDFs in the browser, stores page images temporarily in a
+private Supabase bucket, uses Groq vision in three-page batches, creates article
+drafts, and removes the temporary pages after a successful import.
+
 ## Getting Started
 
 First, run the development server:
