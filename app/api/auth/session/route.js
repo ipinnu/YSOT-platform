@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { adminAuth } from '../../../lib/firebase/admin';
 import { isAdminEmail, isAdminUid, sessionMaxAgeMs, SESSION_COOKIE } from '../../../lib/auth/admin';
+import { createAdminSessionToken, verifyFirebaseIdTokenViaRest } from '../../../lib/auth/session';
 
 export const runtime = 'nodejs';
 
@@ -11,14 +11,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing Firebase ID token.' }, { status: 400 });
     }
 
-    const auth = await adminAuth();
-    const decoded = await auth.verifyIdToken(idToken);
+    const decoded = await verifyFirebaseIdTokenViaRest(idToken);
     if (!isAdminEmail(decoded.email) && !isAdminUid(decoded.uid)) {
       return NextResponse.json({ error: 'This account is not an admin.' }, { status: 403 });
     }
 
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-      expiresIn: sessionMaxAgeMs(),
+    const sessionCookie = createAdminSessionToken({
+      uid: decoded.uid,
+      email: decoded.email,
+      expiresInMs: sessionMaxAgeMs(),
     });
 
     const response = NextResponse.json({ ok: true });

@@ -44,11 +44,6 @@ export function getAdminApp() {
   });
 }
 
-export async function adminAuth() {
-  const { getAuth } = await import('firebase-admin/auth');
-  return getAuth(getAdminApp());
-}
-
 export function db() {
   return getFirestore(getAdminApp());
 }

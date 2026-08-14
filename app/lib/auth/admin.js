@@ -1,7 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { adminAuth } from '../firebase/admin';
+import { verifyAdminSessionToken } from './session';
 
 export const SESSION_COOKIE = '__session';
 const SESSION_DAYS = 5;
@@ -44,8 +44,7 @@ export async function verifyAdminSession() {
   if (!session) return null;
 
   try {
-    const auth = await adminAuth();
-    const decoded = await auth.verifySessionCookie(session, true);
+    const decoded = verifyAdminSessionToken(session);
     if (!isAdminEmail(decoded.email) && !isAdminUid(decoded.uid)) return null;
     return decoded;
   } catch {
