@@ -1697,6 +1697,19 @@ button.secondary {
 
 .event-card-past:hover { opacity: 1; }
 
+.event-card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: -4px 0 4px;
+}
+
+.event-card-image img {
+  object-fit: cover;
+}
+
 .events-section { display: grid; gap: 20px; }
 .events-header p { color: var(--muted); }
 

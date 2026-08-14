@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../lib/supabase/client';
 
 function formatDate(value) {
   if (!value) return 'Not published';
@@ -44,44 +43,27 @@ export default function AdminPage() {
 
   async function fetchAll() {
     setLoadError('');
-    const supabase = createClient();
-    const [
-      { data: articleData, error: articleError },
-      { data: authorData, error: authorError },
-      { data: categoryData, error: categoryError },
-    ] = await Promise.all([
-      supabase
-        .from('articles')
-        .select('id, slug, title, excerpt, author_id, author, category, status, featured, image_url, read_time, published_at, created_at, updated_at')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('authors')
-        .select('id, name, description, image_url')
-        .order('name'),
-      supabase.from('categories').select('id, name').order('name'),
-    ]);
-
-    if (articleError || authorError || categoryError) {
-      setLoadError(
-        articleError?.message ||
-        authorError?.message ||
-        categoryError?.message ||
-        'The editorial library could not be loaded.'
-      );
+    try {
+      const response = await fetch('/api/admin/dashboard');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'The editorial library could not be loaded.');
+      setArticles(data.articles || []);
+      setAuthors(data.authors || []);
+      setCategories(data.categories || []);
+    } catch (error) {
+      setLoadError(error.message || 'The editorial library could not be loaded.');
+    } finally {
+      setLoading(false);
     }
-
-    setArticles(articleData || []);
-    setAuthors(authorData || []);
-    setCategories(categoryData || []);
-    setLoading(false);
   }
 
-  async function runArticleAction(id, action) {
+  async function runArticleAction(id, requestOptions) {
     setWorkingId(id);
     setActionError('');
     try {
-      const { error } = await action(createClient());
-      if (error) throw error;
+      const response = await fetch(`/api/admin/articles/${id}`, requestOptions);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'That change could not be saved.');
       await fetchAll();
     } catch (error) {
       setActionError(error?.message || 'That change could not be saved. Please try again.');
@@ -91,39 +73,36 @@ export default function AdminPage() {
   }
 
   async function handleDelete(id, title) {
-    if (!confirm(`Delete “${title}”? This cannot be undone.`)) return;
-    await runArticleAction(id, (supabase) =>
-      supabase.from('articles').delete().eq('id', id)
-    );
+    if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    await runArticleAction(id, { method: 'DELETE' });
   }
 
   async function handlePublish(id) {
-    await runArticleAction(id, (supabase) =>
-      supabase
-        .from('articles')
-        .update({ status: 'published', published_at: new Date().toISOString() })
-        .eq('id', id)
-    );
+    await runArticleAction(id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'published', published_at: new Date().toISOString() }),
+    });
   }
 
   async function handleUnpublish(id) {
-    await runArticleAction(id, (supabase) =>
-      supabase
-        .from('articles')
-        .update({ status: 'draft', published_at: null })
-        .eq('id', id)
-    );
+    await runArticleAction(id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'draft', published_at: null }),
+    });
   }
 
   async function handleToggleFeatured(id, current) {
-    await runArticleAction(id, (supabase) =>
-      supabase.from('articles').update({ featured: !current }).eq('id', id)
-    );
+    await runArticleAction(id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ featured: !current }),
+    });
   }
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await fetch('/api/auth/session', { method: 'DELETE' });
     router.push('/admin-login');
     router.refresh();
   }
@@ -200,7 +179,7 @@ export default function AdminPage() {
             <h1>Content Control Room</h1>
             <p>
               Everything you publish lives here—articles, writers, categories,
-              newspaper imports, and editorial status.
+              gallery, events, newspaper imports, and editorial status.
             </p>
           </div>
 
@@ -209,7 +188,13 @@ export default function AdminPage() {
               <span aria-hidden="true">+</span> New article
             </Link>
             <Link href="/admin/newspapers" className="admin-import-action">
-              Import newspaper
+              Newspaper importer
+            </Link>
+            <Link href="/admin/gallery" className="admin-import-action">
+              Manage gallery
+            </Link>
+            <Link href="/admin/events" className="admin-import-action">
+              Manage events
             </Link>
             <button type="button" className="admin-signout" onClick={handleSignOut}>
               Sign out
@@ -332,7 +317,7 @@ export default function AdminPage() {
                 <h3>{articles.length === 0 ? 'Your library is ready' : 'No articles match'}</h3>
                 <p>
                   {articles.length === 0
-                    ? 'Create an article or import a newspaper to begin.'
+                    ? 'Create an article to begin.'
                     : 'Try clearing a filter or searching for another phrase.'}
                 </p>
                 {articles.length === 0 ? (
@@ -537,9 +522,29 @@ export default function AdminPage() {
             <Link href="/admin/newspapers" className="admin-import-card">
               <span className="admin-import-mark">N</span>
               <span>
-                <small>Automatic conversion</small>
-                <strong>Import a newspaper</strong>
-                <em>PDF, JPG or PNG → article drafts</em>
+                <small>Coming soon</small>
+                <strong>Newspaper importer</strong>
+                <em>PDF, JPG or PNG to article drafts</em>
+              </span>
+              <b aria-hidden="true">→</b>
+            </Link>
+
+            <Link href="/admin/gallery" className="admin-import-card">
+              <span className="admin-import-mark">G</span>
+              <span>
+                <small>Visual archive</small>
+                <strong>Manage gallery</strong>
+                <em>Upload photos for the public gallery</em>
+              </span>
+              <b aria-hidden="true">→</b>
+            </Link>
+
+            <Link href="/admin/events" className="admin-import-card">
+              <span className="admin-import-mark">E</span>
+              <span>
+                <small>Calendar &amp; recaps</small>
+                <strong>Manage events</strong>
+                <em>Upcoming sessions and past event photos</em>
               </span>
               <b aria-hidden="true">→</b>
             </Link>

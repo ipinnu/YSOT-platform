@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../../lib/supabase/client';
 import { textToBlocks, blocksToText } from '../../lib/content';
+import { uploadImage as uploadToR2 } from '../../lib/upload';
 
 const FALLBACK_CATEGORIES = [
   'Governance', 'Economy', 'Education', 'Security',
@@ -62,15 +62,7 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
 
   async function uploadImage() {
     if (!imageFile) return form.image_url;
-    const supabase = createClient();
-    const ext = imageFile.name.split('.').pop();
-    const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('article-images')
-      .upload(filename, imageFile, { upsert: true });
-    if (uploadError) throw uploadError;
-    const { data: { publicUrl } } = supabase.storage.from('article-images').getPublicUrl(filename);
-    return publicUrl;
+    return uploadToR2(imageFile, 'articles', form.slug || article?.id || 'pending');
   }
 
   async function handleSubmit(status) {
@@ -88,8 +80,6 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
       setUploading(false);
 
       const selectedAuthor = authors.find((a) => a.id === form.author_id);
-      const supabase = createClient();
-
       const payload = {
         title: form.title,
         slug: form.slug,
@@ -108,13 +98,13 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
           : {}),
       };
 
-      if (isEdit) {
-        const { error: e } = await supabase.from('articles').update(payload).eq('id', article.id);
-        if (e) throw e;
-      } else {
-        const { error: e } = await supabase.from('articles').insert(payload);
-        if (e) throw e;
-      }
+      const response = await fetch(isEdit ? `/api/admin/articles/${article.id}` : '/api/admin/articles', {
+        method: isEdit ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not save article.');
 
       router.push('/admin');
       router.refresh();

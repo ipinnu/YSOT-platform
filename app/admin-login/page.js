@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../lib/supabase/client';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseAuth } from '../lib/firebase/client';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -15,17 +16,23 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-    } else {
+
+    try {
+      const credential = await signInWithEmailAndPassword(firebaseAuth(), email, password);
+      const idToken = await credential.user.getIdToken();
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not create admin session.');
+
       router.push('/admin');
       router.refresh();
+    } catch (err) {
+      setError(err.message || 'Could not sign in.');
+      setLoading(false);
     }
   }
 
@@ -66,7 +73,7 @@ export default function AdminLoginPage() {
             </label>
             {error && <p className="form-error">{error}</p>}
             <button type="submit" className="primary" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
         </div>

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../../../lib/supabase/client';
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -17,13 +16,15 @@ export default function NewCategoryPage() {
     setSaving(true);
     setError('');
 
-    const supabase = createClient();
-    const { error: insertError } = await supabase
-      .from('categories')
-      .insert({ name: name.trim() });
+    const response = await fetch('/api/admin/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    const data = await response.json();
 
-    if (insertError) {
-      setError(insertError.message.includes('unique') ? 'That category already exists.' : insertError.message);
+    if (!response.ok) {
+      setError(data.error || 'Could not save category.');
       setSaving(false);
       return;
     }

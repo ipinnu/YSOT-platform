@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../../../lib/supabase/client';
+import { uploadImage } from '../../../lib/upload';
 
 export default function NewAuthorPage() {
   const router = useRouter();
@@ -33,26 +33,21 @@ export default function NewAuthorPage() {
     setError('');
 
     try {
-      const supabase = createClient();
       let image_url = '';
 
       if (imageFile) {
         setUploading(true);
-        const ext = imageFile.name.split('.').pop();
-        const filename = `authors/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('article-images')
-          .upload(filename, imageFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('article-images').getPublicUrl(filename);
-        image_url = publicUrl;
+        image_url = await uploadImage(imageFile, 'authors', form.name.trim() || 'pending');
         setUploading(false);
       }
 
-      const { error: insertError } = await supabase
-        .from('authors')
-        .insert({ name: form.name.trim(), description: form.description.trim(), image_url });
-      if (insertError) throw insertError;
+      const response = await fetch('/api/admin/authors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name.trim(), description: form.description.trim(), image_url }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not save author.');
 
       router.push('/admin');
       router.refresh();

@@ -1,46 +1,21 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+const SESSION_COOKIE = '__session';
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isAdminRoute = path.startsWith('/admin') && path !== '/admin-login';
+  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
-  if (isAdminRoute && !user) {
+  if (isAdminRoute && !hasSession) {
     return NextResponse.redirect(new URL('/admin-login', request.url));
   }
 
-  if (path === '/admin-login' && user) {
+  if (path === '/admin-login' && hasSession) {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {

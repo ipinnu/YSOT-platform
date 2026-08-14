@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { createClient } from '../../../lib/supabase/server';
+import { getAuthors, getCategories } from '../../../lib/firestore/taxonomy';
 import ArticleForm from '../ArticleForm';
 
 export default async function NewArticlePage() {
-  const supabase = await createClient();
-  const [{ data: authors }, { data: categories }] = await Promise.all([
-    supabase.from('authors').select('id, name').order('name'),
-    supabase.from('categories').select('id, name').order('name'),
+  const [authors, categories] = await Promise.all([
+    getAuthors(),
+    getCategories(),
   ]);
 
   return (

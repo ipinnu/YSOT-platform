@@ -6,3 +6,7 @@ out/
 .env*.local
 
 .vercel
+
+# Local service account keys
+*firebase-adminsdk*.json
+*-firebase-adminsdk-*.json
