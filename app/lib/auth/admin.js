@@ -44,7 +44,8 @@ export async function verifyAdminSession() {
   if (!session) return null;
 
   try {
-    const decoded = await adminAuth().verifySessionCookie(session, true);
+    const auth = await adminAuth();
+    const decoded = await auth.verifySessionCookie(session, true);
     if (!isAdminEmail(decoded.email) && !isAdminUid(decoded.uid)) return null;
     return decoded;
   } catch {

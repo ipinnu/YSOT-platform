@@ -2,7 +2,6 @@ import 'server-only';
 import fs from 'node:fs';
 import path from 'node:path';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 function getServiceAccount() {
@@ -45,7 +44,8 @@ export function getAdminApp() {
   });
 }
 
-export function adminAuth() {
+export async function adminAuth() {
+  const { getAuth } = await import('firebase-admin/auth');
   return getAuth(getAdminApp());
 }
 

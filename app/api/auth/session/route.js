@@ -11,12 +11,13 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing Firebase ID token.' }, { status: 400 });
     }
 
-    const decoded = await adminAuth().verifyIdToken(idToken);
+    const auth = await adminAuth();
+    const decoded = await auth.verifyIdToken(idToken);
     if (!isAdminEmail(decoded.email) && !isAdminUid(decoded.uid)) {
       return NextResponse.json({ error: 'This account is not an admin.' }, { status: 403 });
     }
 
-    const sessionCookie = await adminAuth().createSessionCookie(idToken, {
+    const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: sessionMaxAgeMs(),
     });
 
