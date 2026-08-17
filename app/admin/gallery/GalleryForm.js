@@ -97,7 +97,7 @@ export default function GalleryForm({ item }) {
             name="alt"
             value={form.alt}
             onChange={handleChange}
-            placeholder="Describe this photo for accessibility"
+            placeholder="Describe this photo for proper captioning"
           />
         </div>
 

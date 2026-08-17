@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { textToBlocks, blocksToText } from '../../lib/content';
 import { uploadImage as uploadToR2 } from '../../lib/upload';
@@ -42,6 +42,32 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
   const [saving, setSaving] = useState(false);
   const [saveAction, setSaveAction] = useState(null);
   const [error, setError] = useState('');
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryError, setGalleryError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadGalleryItems() {
+      setGalleryError('');
+      try {
+        const response = await fetch('/api/admin/gallery');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Photo library could not be loaded.');
+        if (active) setGalleryItems(data.items || []);
+      } catch (err) {
+        if (active) setGalleryError(err.message || 'Photo library could not be loaded.');
+      } finally {
+        if (active) setGalleryLoading(false);
+      }
+    }
+
+    loadGalleryItems();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -58,6 +84,12 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+  }
+
+  function selectGalleryImage(item) {
+    setImageFile(null);
+    setForm((prev) => ({ ...prev, image_url: item.image_url }));
+    setImagePreview(item.image_url);
   }
 
   async function uploadImage() {
@@ -186,6 +218,47 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
             </div>
           )}
           <input className="form-input-file" type="file" accept="image/*" onChange={handleImageChange} />
+          <div className="photo-library-picker">
+            <div className="photo-library-heading">
+              <strong>Photo library</strong>
+              <span>
+                {galleryLoading
+                  ? 'Loading photos...'
+                  : `${galleryItems.length} available photo${galleryItems.length === 1 ? '' : 's'}`}
+              </span>
+            </div>
+            {galleryError ? (
+              <p className="form-error">{galleryError}</p>
+            ) : galleryLoading ? (
+              <div className="photo-library-grid loading">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            ) : galleryItems.length > 0 ? (
+              <div className="photo-library-grid">
+                {galleryItems.map((item) => {
+                  const selected = form.image_url === item.image_url && !imageFile;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="photo-library-option"
+                      data-selected={selected ? 'true' : 'false'}
+                      onClick={() => selectGalleryImage(item)}
+                      title={item.alt || 'Use this photo'}
+                    >
+                      <img src={item.image_url} alt={item.alt || ''} />
+                      <span>{item.alt || 'Untitled photo'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="form-hint">No gallery photos are available yet.</p>
+            )}
+          </div>
           {uploading && <small className="form-hint">Uploading image…</small>}
         </div>
 
