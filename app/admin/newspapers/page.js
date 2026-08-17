@@ -30,8 +30,7 @@ export default function NewspaperImportPage() {
                 You can already create articles, upload gallery photos, manage
                 events, and add authors from the dashboard. Newspaper upload is
                 not active yet. When it is enabled, you will be able to upload a
-                scanned newspaper or PDF and turn it into private article drafts
-                for editor review.
+                scanned newspaper or PDF and turn it into articles.
               </p>
             </div>
           </div>

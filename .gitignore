@@ -10,3 +10,10 @@ out/
 # Local service account keys
 *firebase-adminsdk*.json
 *-firebase-adminsdk-*.json
+
+# Local runtime and tool cache
+tsconfig.tsbuildinfo
+.next-dev-*.log
+.agents/
+.claude/
+__pycache__/

@@ -192,3 +192,131 @@ CREATE POLICY "Admins delete own newspaper pages"
     bucket_id = 'newspaper-imports'
     AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
   );
+
+-- ============================================================
+-- Gallery
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS gallery_items (
+  id          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  alt         TEXT          NOT NULL DEFAULT '',
+  image_url   TEXT          NOT NULL,
+  sort_order  INTEGER       DEFAULT 0,
+  published   BOOLEAN       DEFAULT true,
+  created_at  TIMESTAMPTZ   DEFAULT NOW()
+);
+
+ALTER TABLE gallery_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read published gallery" ON gallery_items;
+DROP POLICY IF EXISTS "Admins manage gallery" ON gallery_items;
+CREATE POLICY "Public read published gallery"
+  ON gallery_items FOR SELECT
+  USING (published = true);
+
+CREATE POLICY "Admins manage gallery"
+  ON gallery_items FOR ALL
+  USING (auth.role() = 'authenticated');
+
+-- ============================================================
+-- Events
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS events (
+  id                 UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  title              TEXT          NOT NULL,
+  description        TEXT          DEFAULT '',
+  location           TEXT          DEFAULT '',
+  format             TEXT          DEFAULT 'Forum',
+  event_date         DATE          NOT NULL,
+  status             TEXT          DEFAULT 'upcoming'
+                                   CHECK (status IN ('upcoming', 'past')),
+  image_url          TEXT          DEFAULT '',
+  recap_image_url    TEXT          DEFAULT '',
+  recap_title        TEXT          DEFAULT '',
+  recap_description  TEXT          DEFAULT '',
+  published          BOOLEAN       DEFAULT true,
+  sort_order         INTEGER       DEFAULT 0,
+  created_at         TIMESTAMPTZ   DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ   DEFAULT NOW()
+);
+
+CREATE OR REPLACE TRIGGER events_updated_at
+  BEFORE UPDATE ON events
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read published events" ON events;
+DROP POLICY IF EXISTS "Admins manage events" ON events;
+CREATE POLICY "Public read published events"
+  ON events FOR SELECT
+  USING (published = true);
+
+CREATE POLICY "Admins manage events"
+  ON events FOR ALL
+  USING (auth.role() = 'authenticated');
+
+-- Seed default events when the table is empty (matches original static page content)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM events LIMIT 1) THEN
+    INSERT INTO events (title, description, location, format, event_date, status, recap_title, recap_description, sort_order)
+    VALUES
+      (
+        'Inaugural Webinar: Voices of Change',
+        'An evening of policy debate featuring Prof. Francis Egbokhare, Dr. Richard Ikiebe, and the YSoT leadership team.',
+        'Online',
+        'Webinar',
+        '2025-05-24',
+        'past',
+        'Who is Thinking for Nigeria?',
+        'YSoT opened with a candid conversation on Nigeria''s leadership gaps, featuring Ogie Eboigbe, Oyinkan Teriba, Prof. Francis Egbokhare, and Dr. Richard Ikiebe. The session mapped practical reforms, civic responsibility, and the power of ideas in rebuilding trust.',
+        1
+      ),
+      (
+        'Policy Roundtable: Lagos Innovation Corridor',
+        'A closed-door session exploring governance reforms that can unlock investment across Yaba and the mainland.',
+        'Yaba, Lagos',
+        'Roundtable',
+        '2025-06-17',
+        'past',
+        '',
+        '',
+        2
+      ),
+      (
+        'Youth Thought Lab',
+        'Emerging scholars share research briefs on education, security, and social order.',
+        'Yaba, Lagos',
+        'Workshop',
+        '2025-07-02',
+        'past',
+        '',
+        '',
+        3
+      ),
+      (
+        'Future of Cities Dialogue',
+        'An interdisciplinary panel on housing, transit, and urban inclusion in fast-growing Nigerian cities.',
+        'Civic House, Yaba',
+        'Forum',
+        '2026-03-14',
+        'upcoming',
+        '',
+        '',
+        4
+      ),
+      (
+        'Public Finance Reset',
+        'Policy leaders and researchers map reforms to strengthen public budgeting and fiscal trust.',
+        'Online',
+        'Webinar',
+        '2026-04-09',
+        'upcoming',
+        '',
+        '',
+        5
+      );
+  END IF;
+END $$;
