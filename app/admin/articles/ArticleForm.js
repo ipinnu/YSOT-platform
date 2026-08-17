@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { textToBlocks, blocksToText } from '../../lib/content';
 import { uploadImage as uploadToR2 } from '../../lib/upload';
@@ -25,7 +25,6 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
 
   const [form, setForm] = useState({
     title: article?.title || '',
-    slug: article?.slug || '',
     author_id: article?.author_id || '',
     author_bio: article?.author_bio || '',
     category: defaultCategory,
@@ -42,41 +41,11 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
   const [saving, setSaving] = useState(false);
   const [saveAction, setSaveAction] = useState(null);
   const [error, setError] = useState('');
-  const [galleryItems, setGalleryItems] = useState([]);
-  const [galleryLoading, setGalleryLoading] = useState(true);
-  const [galleryError, setGalleryError] = useState('');
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadGalleryItems() {
-      setGalleryError('');
-      try {
-        const response = await fetch('/api/admin/gallery');
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Photo library could not be loaded.');
-        if (active) setGalleryItems(data.items || []);
-      } catch (err) {
-        if (active) setGalleryError(err.message || 'Photo library could not be loaded.');
-      } finally {
-        if (active) setGalleryLoading(false);
-      }
-    }
-
-    loadGalleryItems();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
     const v = type === 'checkbox' ? checked : value;
-    setForm((prev) => {
-      const updated = { ...prev, [name]: v };
-      if (name === 'title' && !isEdit) updated.slug = slugify(value);
-      return updated;
-    });
+    setForm((prev) => ({ ...prev, [name]: v }));
   }
 
   function handleImageChange(e) {
@@ -86,19 +55,14 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
     setImagePreview(URL.createObjectURL(file));
   }
 
-  function selectGalleryImage(item) {
-    setImageFile(null);
-    setForm((prev) => ({ ...prev, image_url: item.image_url }));
-    setImagePreview(item.image_url);
-  }
-
-  async function uploadImage() {
+  async function uploadImage(slug) {
     if (!imageFile) return form.image_url;
-    return uploadToR2(imageFile, 'articles', form.slug || article?.id || 'pending');
+    return uploadToR2(imageFile, 'articles', slug || article?.id || 'pending');
   }
 
   async function handleSubmit(status) {
-    if (!form.title || !form.slug || !form.excerpt || !form.content) {
+    const generatedSlug = isEdit && article?.slug ? article.slug : slugify(form.title);
+    if (!form.title || !generatedSlug || !form.excerpt || !form.content) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -108,13 +72,13 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
 
     try {
       setUploading(true);
-      const image_url = await uploadImage();
+      const image_url = await uploadImage(generatedSlug);
       setUploading(false);
 
       const selectedAuthor = authors.find((a) => a.id === form.author_id);
       const payload = {
         title: form.title,
-        slug: form.slug,
+        slug: generatedSlug,
         author_id: form.author_id || null,
         author: selectedAuthor?.name || '',
         author_bio: form.author_bio,
@@ -155,12 +119,6 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
         <div className="form-field span-2">
           <label className="form-label">Title <span className="required">*</span></label>
           <input className="form-input" name="title" value={form.title} onChange={handleChange} placeholder="Article title" />
-        </div>
-
-        <div className="form-field span-2">
-          <label className="form-label">URL Slug <span className="required">*</span></label>
-          <input className="form-input" name="slug" value={form.slug} onChange={handleChange} placeholder="article-url-slug" />
-          <small className="form-hint">Public URL: /posts/{form.slug || 'your-slug'}</small>
         </div>
 
         <div className="form-field">
@@ -218,47 +176,6 @@ export default function ArticleForm({ article, authors = [], categories = [] }) 
             </div>
           )}
           <input className="form-input-file" type="file" accept="image/*" onChange={handleImageChange} />
-          <div className="photo-library-picker">
-            <div className="photo-library-heading">
-              <strong>Photo library</strong>
-              <span>
-                {galleryLoading
-                  ? 'Loading photos...'
-                  : `${galleryItems.length} available photo${galleryItems.length === 1 ? '' : 's'}`}
-              </span>
-            </div>
-            {galleryError ? (
-              <p className="form-error">{galleryError}</p>
-            ) : galleryLoading ? (
-              <div className="photo-library-grid loading">
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            ) : galleryItems.length > 0 ? (
-              <div className="photo-library-grid">
-                {galleryItems.map((item) => {
-                  const selected = form.image_url === item.image_url && !imageFile;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="photo-library-option"
-                      data-selected={selected ? 'true' : 'false'}
-                      onClick={() => selectGalleryImage(item)}
-                      title={item.alt || 'Use this photo'}
-                    >
-                      <img src={item.image_url} alt={item.alt || ''} />
-                      <span>{item.alt || 'Untitled photo'}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="form-hint">No gallery photos are available yet.</p>
-            )}
-          </div>
           {uploading && <small className="form-hint">Uploading image…</small>}
         </div>
 

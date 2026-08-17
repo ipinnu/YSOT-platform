@@ -102,6 +102,21 @@ export async function articleSlugExists(slug, exceptId) {
   return snapshot.docs.some((doc) => doc.id !== exceptId);
 }
 
+export async function uniqueArticleSlug(baseSlug, exceptId) {
+  const cleanBase = String(baseSlug || 'article')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'article';
+
+  let slug = cleanBase;
+  let suffix = 2;
+  while (await articleSlugExists(slug, exceptId)) {
+    slug = `${cleanBase}-${suffix}`;
+    suffix += 1;
+  }
+  return slug;
+}
+
 export async function createArticle(payload) {
   const now = FieldValue.serverTimestamp();
   const doc = articlesRef().doc();
