@@ -4,7 +4,12 @@ import { Header } from './components/Header';
 
 export const metadata = {
   title: 'Yaba School of Thought',
-  description: 'YSoT article platform and think-tank website.'
+  description: 'YSoT article platform and think-tank website.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {
