@@ -27,9 +27,11 @@ export default function NewspaperImportPage() {
             <div>
               <h2>Newspaper conversion is coming soon</h2>
               <p>
-                Article, gallery, event, and author tools are available now.
-                Automated newspaper-to-draft conversion will be enabled after
-                the editorial pipeline is ready.
+                You can already create articles, upload gallery photos, manage
+                events, and add authors from the dashboard. Newspaper upload is
+                not active yet. When it is enabled, you will be able to upload a
+                scanned newspaper or PDF and turn it into private article drafts
+                for editor review.
               </p>
             </div>
           </div>
